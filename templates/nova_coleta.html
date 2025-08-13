@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Coleta{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-plus-circle"></i> Nova Coleta</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data" id="formColeta">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="codigo" class="form-label">Código *</label>
+                                    <input type="text" class="form-control" id="codigo" name="codigo" required>
+                                    <div class="form-text">Código único para identificação da coleta</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="nome_cientifico" class="form-label">Nome Científico</label>
+                                    <input type="text" class="form-control" id="nome_cientifico" name="nome_cientifico">
+                                    <div class="form-text">Nome científico da espécie (ex: Agaricus bisporus)</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="nome_popular" class="form-label">Nome Popular</label>
+                                    <input type="text" class="form-control" id="nome_popular" name="nome_popular">
+                                    <div class="form-text">Nome popular ou comum da espécie</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="data_coleta" class="form-label">Data da Coleta *</label>
+                                    <input type="date" class="form-control" id="data_coleta" name="data_coleta" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="local_coleta" class="form-label">Local da Coleta</label>
+                                    <textarea class="form-control" id="local_coleta" name="local_coleta" rows="2"></textarea>
+                                    <div class="form-text">Descrição detalhada do local</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="coordenadas" class="form-label">Coordenadas</label>
+                                    <input type="text" class="form-control" id="coordenadas" name="coordenadas" placeholder="ex: -25.4284, -49.2733">
+                                    <div class="form-text">Coordenadas geográficas (latitude, longitude)</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="substrato" class="form-label">Substrato</label>
+                                    <select class="form-select" id="substrato" name="substrato">
+                                        <option value="">Selecione o substrato</option>
+                                        <option value="solo">Solo</option>
+                                        <option value="madeira">Madeira</option>
+                                        <option value="folhas">Folhas</option>
+                                        <option value="grama">Grama</option>
+                                        <option value="tronco">Tronco</option>
+                                        <option value="raiz">Raiz</option>
+                                        <option value="outros">Outros</option>
+                                    </select>
+                                    <div class="form-text">Tipo de substrato onde foi encontrado</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="coletor" class="form-label">Coletor</label>
+                                    <input type="text" class="form-control" id="coletor" name="coletor">
+                                    <div class="form-text">Nome do coletor responsável</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="observacoes" class="form-label">Observações</label>
+                                    <textarea class="form-control" id="observacoes" name="observacoes" rows="3"></textarea>
+                                    <div class="form-text">Observações adicionais sobre a coleta</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Seção de Imagens -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h5><i class="fas fa-images"></i> Imagens da Coleta</h5>
+                                <div class="mb-3">
+                                    <label for="imagens" class="form-label">Selecionar Imagens</label>
+                                    <input type="file" class="form-control" id="imagens" name="imagens" multiple accept="image/*">
+                                    <div class="form-text">Selecione uma ou mais imagens (JPG, PNG, GIF)</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="descricao_imagem" class="form-label">Descrição das Imagens</label>
+                                    <textarea class="form-control" id="descricao_imagem" name="descricao_imagem" rows="2" placeholder="Descrição geral para todas as imagens selecionadas"></textarea>
+                                    <div class="form-text">Descrição que será aplicada a todas as imagens</div>
+                                </div>
+                                
+                                <!-- Preview das imagens selecionadas -->
+                                <div id="imagePreview" class="row g-2"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Cadastrar Coleta
+                                </button>
+                                <a href="{{ url_for('coletas') }}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('imagens').addEventListener('change', function(e) {
+    const preview = document.getElementById('imagePreview');
+    preview.innerHTML = '';
+    
+    if (e.target.files.length > 0) {
+        Array.from(e.target.files).forEach((file, index) => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-3 col-sm-6';
+                    col.innerHTML = `
+                        <div class="card">
+                            <img src="${e.target.result}" class="card-img-top" style="height: 150px; object-fit: cover;" alt="Preview">
+                            <div class="card-body p-2">
+                                <small class="text-muted">${file.name}</small>
+                            </div>
+                        </div>
+                    `;
+                    preview.appendChild(col);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
+
+// Validação do formulário
+document.getElementById('formColeta').addEventListener('submit', function(e) {
+    const codigo = document.getElementById('codigo').value.trim();
+    const dataColeta = document.getElementById('data_coleta').value;
+    
+    if (!codigo) {
+        e.preventDefault();
+        alert('O código é obrigatório!');
+        return;
+    }
+    
+    if (!dataColeta) {
+        e.preventDefault();
+        alert('A data da coleta é obrigatória!');
+        return;
+    }
+    
+    // Validar se pelo menos uma imagem foi selecionada
+    const imagens = document.getElementById('imagens').files;
+    if (imagens.length === 0) {
+        if (!confirm('Nenhuma imagem foi selecionada. Deseja continuar mesmo assim?')) {
+            e.preventDefault();
+            return;
+        }
+    }
+});
+</script>
+{% endblock %}

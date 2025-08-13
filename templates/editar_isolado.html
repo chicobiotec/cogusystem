@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Isolado - {{ isolado.codigo }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Início</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('isolados') }}">Isolados</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('isolado_detalhe', id=isolado.id) }}">{{ isolado.codigo }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Editar</li>
+            </ol>
+        </nav>
+        
+        <h2><i class="bi bi-pencil"></i> Editar Isolado {{ isolado.codigo }}</h2>
+        <p class="text-muted">Edite os dados do isolado micelial</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-petri-dish"></i> Informações do Isolado</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <!-- Código do Isolado -->
+                        <div class="col-md-6 mb-3">
+                            <label for="codigo" class="form-label">
+                                <i class="bi bi-hash"></i> Código do Isolado <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="codigo" name="codigo" required
+                                   value="{{ isolado.codigo }}" placeholder="Ex: ISO001, ISO2024-001">
+                            <div class="form-text">Código único para identificação do isolado</div>
+                        </div>
+                        
+                        <!-- Coleta -->
+                        <div class="col-md-6 mb-3">
+                            <label for="coleta_id" class="form-label">
+                                <i class="bi bi-collection"></i> Coleta de Origem <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="coleta_id" name="coleta_id" required disabled>
+                                <option value="{{ isolado.coleta_id }}" selected>
+                                    {{ isolado.coleta.codigo }} - {{ isolado.coleta.nome_cientifico or isolado.coleta.nome_popular or 'Sem identificação' }}
+                                </option>
+                            </select>
+                            <div class="form-text">Coleta de onde foi obtido o isolado (não pode ser alterada)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Data de Isolamento -->
+                        <div class="col-md-6 mb-3">
+                            <label for="data_isolamento" class="form-label">
+                                <i class="bi bi-calendar"></i> Data de Isolamento <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" class="form-control" id="data_isolamento" name="data_isolamento" 
+                                   value="{{ isolado.data_isolamento.strftime('%Y-%m-%d') }}" required>
+                        </div>
+                        
+                        <!-- Meio de Cultura -->
+                        <div class="col-md-6 mb-3">
+                            <label for="meio_cultura" class="form-label">
+                                <i class="bi bi-droplet"></i> Meio de Cultura <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="meio_cultura" name="meio_cultura" required>
+                                <option value="">Selecione o meio</option>
+                                <option value="PDA" {{ 'selected' if isolado.meio_cultura == 'PDA' }}>PDA (Potato Dextrose Agar)</option>
+                                <option value="MEA" {{ 'selected' if isolado.meio_cultura == 'MEA' }}>MEA (Malt Extract Agar)</option>
+                                <option value="SDA" {{ 'selected' if isolado.meio_cultura == 'SDA' }}>SDA (Sabouraud Dextrose Agar)</option>
+                                <option value="Czapek" {{ 'selected' if isolado.meio_cultura == 'Czapek' }}>Czapek Dox Agar</option>
+                                <option value="YMA" {{ 'selected' if isolado.meio_cultura == 'YMA' }}>YMA (Yeast Malt Agar)</option>
+                                <option value="outros" {{ 'selected' if isolado.meio_cultura not in ['PDA', 'MEA', 'SDA', 'Czapek', 'YMA'] }}>Outros</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Temperatura de Incubação -->
+                        <div class="col-md-6 mb-3">
+                            <label for="temperatura_incubacao" class="form-label">
+                                <i class="bi bi-thermometer-half"></i> Temperatura de Incubação
+                            </label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="temperatura_incubacao" 
+                                       name="temperatura_incubacao" step="0.1" min="0" max="50"
+                                       value="{{ isolado.temperatura_incubacao or '' }}" placeholder="Ex: 25.0">
+                                <span class="input-group-text">°C</span>
+                            </div>
+                            <div class="form-text">Temperatura ideal para crescimento (opcional)</div>
+                        </div>
+                        
+                        <!-- Outros Meios -->
+                        <div class="col-md-6 mb-3" id="outros_meios_div" style="display: {{ 'block' if isolado.meio_cultura not in ['PDA', 'MEA', 'SDA', 'Czapek', 'YMA'] else 'none' }};">
+                            <label for="outros_meios" class="form-label">
+                                <i class="bi bi-pencil"></i> Especificar Outro Meio
+                            </label>
+                            <input type="text" class="form-control" id="outros_meios" name="outros_meios"
+                                   value="{{ isolado.meio_cultura if isolado.meio_cultura not in ['PDA', 'MEA', 'SDA', 'Czapek', 'YMA'] else '' }}"
+                                   placeholder="Descreva o meio de cultura">
+                        </div>
+                    </div>
+                    
+                    <!-- Observações -->
+                    <div class="mb-3">
+                        <label for="observacoes" class="form-label">
+                            <i class="bi bi-journal-text"></i> Observações
+                        </label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="4"
+                                  placeholder="Observações sobre o isolamento, características do micélio, contaminação, etc.">{{ isolado.observacoes or '' }}</textarea>
+                    </div>
+                    
+                    <!-- Botões -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('isolado_detalhe', id=isolado.id) }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Atualizar Isolado
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Painel de Ajuda -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-question-circle"></i> Dicas para Edição</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Código único:</strong> Mantenha um sistema de codificação consistente
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Coleta:</strong> A coleta de origem não pode ser alterada
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Meio de cultura:</strong> Atualize conforme necessário
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Temperatura:</strong> Registre a temperatura ideal para crescimento
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Observações:</strong> Mantenha as observações atualizadas
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Campos Obrigatórios</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Os seguintes campos são obrigatórios:</p>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-asterisk text-danger"></i> Código do Isolado</li>
+                    <li><i class="bi bi-asterisk text-danger"></i> Data de Isolamento</li>
+                    <li><i class="bi bi-asterisk text-danger"></i> Meio de Cultura</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Informações do Isolado</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Repiques:</strong> {{ isolado.repiques|length }}</p>
+                <p><strong>Experimentos:</strong> {{ isolado.experimentos|length }}</p>
+                <p><strong>Data de Cadastro:</strong> {{ isolado.data_cadastro.strftime('%d/%m/%Y') if isolado.data_cadastro else 'N/A' }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Mostrar campo para outros meios quando selecionado
+    document.getElementById('meio_cultura').addEventListener('change', function() {
+        const outrosDiv = document.getElementById('outros_meios_div');
+        const outrosInput = document.getElementById('outros_meios');
+        
+        if (this.value === 'outros') {
+            outrosDiv.style.display = 'block';
+            outrosInput.required = true;
+        } else {
+            outrosDiv.style.display = 'none';
+            outrosInput.required = false;
+            outrosInput.value = '';
+        }
+    });
+    
+    // Validação do formulário
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const codigo = document.getElementById('codigo').value.trim();
+        const dataIsolamento = document.getElementById('data_isolamento').value;
+        const meioCultura = document.getElementById('meio_cultura').value;
+        
+        if (!codigo || !dataIsolamento || !meioCultura) {
+            e.preventDefault();
+            alert('Por favor, preencha todos os campos obrigatórios.');
+            return false;
+        }
+        
+        // Validar formato do código
+        if (codigo.length < 3) {
+            e.preventDefault();
+            alert('O código do isolado deve ter pelo menos 3 caracteres.');
+            return false;
+        }
+        
+        // Validar temperatura se informada
+        const temperatura = document.getElementById('temperatura_incubacao').value;
+        if (temperatura && (parseFloat(temperatura) < 0 || parseFloat(temperatura) > 50)) {
+            e.preventDefault();
+            alert('A temperatura deve estar entre 0°C e 50°C.');
+            return false;
+        }
+        
+        return true;
+    });
+</script>
+{% endblock %}

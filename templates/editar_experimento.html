@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Experimento - {{ experimento.titulo }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Início</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('experimentos') }}">Experimentos</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('experimento_detalhe', id=experimento.id) }}">{{ experimento.titulo }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Editar</li>
+            </ol>
+        </nav>
+        
+        <h2><i class="bi bi-pencil"></i> Editar Experimento</h2>
+        <p class="text-muted">Edite os dados do experimento científico</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-flask"></i> Informações do Experimento</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <!-- Título -->
+                    <div class="mb-3">
+                        <label for="titulo" class="form-label">
+                            <i class="bi bi-type"></i> Título do Experimento <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="titulo" name="titulo" required
+                               value="{{ experimento.titulo }}" placeholder="Ex: Análise de pigmentos em cogumelos nativos">
+                        <div class="form-text">Título descritivo e específico do experimento</div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Coleta Relacionada -->
+                        <div class="col-md-6 mb-3">
+                            <label for="coleta_id" class="form-label">
+                                <i class="bi bi-collection"></i> Coleta Relacionada
+                            </label>
+                            <select class="form-select" id="coleta_id" name="coleta_id">
+                                <option value="">Selecione uma coleta (opcional)</option>
+                                {% for coleta in coletas %}
+                                <option value="{{ coleta.id }}" 
+                                        {{ 'selected' if experimento.coleta_id == coleta.id }}>
+                                    {{ coleta.codigo }} - {{ coleta.nome_cientifico or coleta.nome_popular or 'Sem identificação' }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Coleta relacionada ao experimento (se aplicável)</div>
+                        </div>
+                        
+                        <!-- Isolado Relacionado -->
+                        <div class="col-md-6 mb-3">
+                            <label for="isolado_id" class="form-label">
+                                <i class="bi bi-petri-dish"></i> Isolado Relacionado
+                            </label>
+                            <select class="form-select" id="isolado_id" name="isolado_id">
+                                <option value="">Selecione um isolado (opcional)</option>
+                                {% for isolado in isolados %}
+                                <option value="{{ isolado.id }}" 
+                                        {{ 'selected' if experimento.isolado_id == isolado.id }}>
+                                    {{ isolado.codigo }} - {{ isolado.coleta.codigo if isolado.coleta else 'N/A' }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Isolado micelial relacionado ao experimento (se aplicável)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Data de Início -->
+                        <div class="col-md-6 mb-3">
+                            <label for="data_inicio" class="form-label">
+                                <i class="bi bi-calendar"></i> Data de Início
+                            </label>
+                            <input type="date" class="form-control" id="data_inicio" name="data_inicio"
+                                   value="{{ experimento.data_inicio.strftime('%Y-%m-%d') if experimento.data_inicio else '' }}">
+                            <div class="form-text">Data de início do experimento (opcional)</div>
+                        </div>
+                        
+                        <!-- Data de Fim -->
+                        <div class="col-md-6 mb-3">
+                            <label for="data_fim" class="form-label">
+                                <i class="bi bi-calendar-check"></i> Data de Fim
+                            </label>
+                            <input type="date" class="form-control" id="data_fim" name="data_fim"
+                                   value="{{ experimento.data_fim.strftime('%Y-%m-%d') if experimento.data_fim else '' }}">
+                            <div class="form-text">Data de conclusão do experimento (opcional)</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Status -->
+                    <div class="mb-3">
+                        <label for="status" class="form-label">
+                            <i class="bi bi-flag"></i> Status do Experimento
+                        </label>
+                        <select class="form-select" id="status" name="status" required>
+                            <option value="Em andamento" {{ 'selected' if experimento.status == 'Em andamento' }}>Em andamento</option>
+                            <option value="Concluído" {{ 'selected' if experimento.status == 'Concluído' }}>Concluído</option>
+                            <option value="Pausado" {{ 'selected' if experimento.status == 'Pausado' }}>Pausado</option>
+                            <option value="Cancelado" {{ 'selected' if experimento.status == 'Cancelado' }}>Cancelado</option>
+                            <option value="Em planejamento" {{ 'selected' if experimento.status == 'Em planejamento' }}>Em planejamento</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Objetivo -->
+                    <div class="mb-3">
+                        <label for="objetivo" class="form-label">
+                            <i class="bi bi-bullseye"></i> Objetivo
+                        </label>
+                        <textarea class="form-control" id="objetivo" name="objetivo" rows="3"
+                                  placeholder="Descreva o objetivo principal do experimento">{{ experimento.objetivo or '' }}</textarea>
+                    </div>
+                    
+                    <!-- Materiais e Métodos -->
+                    <div class="mb-3">
+                        <label for="materiais_metodos" class="form-label">
+                            <i class="bi bi-tools"></i> Materiais e Métodos
+                        </label>
+                        <textarea class="form-control" id="materiais_metodos" name="materiais_metodos" rows="6"
+                                  placeholder="Descreva os materiais utilizados e os métodos empregados no experimento">{{ experimento.materiais_metodos or '' }}</textarea>
+                        <div class="form-text">Inclua equipamentos, reagentes, procedimentos, etc.</div>
+                    </div>
+                    
+                    <!-- Resultados -->
+                    <div class="mb-3">
+                        <label for="resultados" class="form-label">
+                            <i class="bi bi-graph-up"></i> Resultados
+                        </label>
+                        <textarea class="form-control" id="resultados" name="resultados" rows="6"
+                                  placeholder="Descreva os resultados obtidos no experimento">{{ experimento.resultados or '' }}</textarea>
+                        <div class="form-text">Inclua dados, observações, análises, etc.</div>
+                    </div>
+                    
+                    <!-- Discussão -->
+                    <div class="mb-3">
+                        <label for="discussao" class="form-label">
+                            <i class="bi bi-chat-dots"></i> Discussão
+                        </label>
+                        <textarea class="form-control" id="discussao" name="discussao" rows="6"
+                                  placeholder="Discute os resultados, interpretações, implicações e limitações">{{ experimento.discussao or '' }}</textarea>
+                        <div class="form-text">Análise crítica dos resultados e suas implicações</div>
+                    </div>
+                    
+                    <!-- Conclusões -->
+                    <div class="mb-3">
+                        <label for="conclusoes" class="form-label">
+                            <i class="bi bi-check-circle"></i> Conclusões
+                        </label>
+                        <textarea class="form-control" id="conclusoes" name="conclusoes" rows="4"
+                                  placeholder="Principais conclusões e descobertas do experimento">{{ experimento.conclusoes or '' }}</textarea>
+                    </div>
+                    
+                    <!-- Botões -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('experimento_detalhe', id=experimento.id) }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Atualizar Experimento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Painel de Ajuda -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-question-circle"></i> Dicas para Edição</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Título:</strong> Mantenha o título específico e descritivo
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Status:</strong> Atualize o status conforme o progresso
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Datas:</strong> Mantenha as datas atualizadas
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Resultados:</strong> Adicione novos resultados conforme obtidos
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Discussão:</strong> Revise e atualize as análises
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Campos Obrigatórios</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Os seguintes campos são obrigatórios:</p>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-asterisk text-danger"></i> Título do Experimento</li>
+                    <li><i class="bi bi-asterisk text-danger"></i> Status</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Informações do Experimento</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Data de Cadastro:</strong> {{ experimento.data_cadastro.strftime('%d/%m/%Y') if experimento.data_cadastro else 'N/A' }}</p>
+                <p><strong>Coleta:</strong> 
+                    {% if experimento.coleta %}
+                        <a href="{{ url_for('coleta_detalhe', id=experimento.coleta.id) }}" class="text-decoration-none">
+                            {{ experimento.coleta.codigo }}
+                        </a>
+                    {% else %}
+                        <span class="text-muted">N/A</span>
+                    {% endif %}
+                </p>
+                <p><strong>Isolado:</strong> 
+                    {% if experimento.isolado %}
+                        <a href="{{ url_for('isolado_detalhe', id=experimento.isolado.id) }}" class="text-decoration-none">
+                            {{ experimento.isolado.codigo }}
+                        </a>
+                    {% else %}
+                        <span class="text-muted">N/A</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Validação de datas
+    document.getElementById('data_fim').addEventListener('change', function() {
+        const dataInicio = document.getElementById('data_inicio').value;
+        const dataFim = this.value;
+        
+        if (dataInicio && dataFim && dataFim < dataInicio) {
+            alert('A data de fim não pode ser anterior à data de início.');
+            this.value = '';
+        }
+    });
+    
+    // Validação do formulário
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const titulo = document.getElementById('titulo').value.trim();
+        const status = document.getElementById('status').value;
+        
+        if (!titulo || !status) {
+            e.preventDefault();
+            alert('Por favor, preencha todos os campos obrigatórios.');
+            return false;
+        }
+        
+        // Validar título
+        if (titulo.length < 10) {
+            e.preventDefault();
+            alert('O título deve ter pelo menos 10 caracteres.');
+            return false;
+        }
+        
+        // Validar datas se ambas estiverem preenchidas
+        const dataInicio = document.getElementById('data_inicio').value;
+        const dataFim = document.getElementById('data_fim').value;
+        
+        if (dataInicio && dataFim && dataFim < dataInicio) {
+            e.preventDefault();
+            alert('A data de fim não pode ser anterior à data de início.');
+            return false;
+        }
+        
+        return true;
+    });
+</script>
+{% endblock %}

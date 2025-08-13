@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Início - Sistema para Bioprospecção de Cogumelos{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4 text-center mb-4">
+            <i class="bi bi-mushroom text-success"></i>
+            Sistema para Bioprospecção de Cogumelos
+        </h1>
+        <p class="lead text-center text-muted">
+            Plataforma completa para administração de coletas, isolados e experimentos com cogumelos nativos
+        </p>
+    </div>
+</div>
+
+<!-- Estatísticas -->
+<div class="row mb-5">
+    <div class="col-md-4 mb-3">
+        <div class="card stats-card text-center h-100">
+            <div class="card-body">
+                <i class="bi bi-collection display-1"></i>
+                <h3 class="card-title">{{ total_coletas }}</h3>
+                <p class="card-text">Coletas Registradas</p>
+                <a href="{{ url_for('coletas') }}" class="btn btn-light">Ver Todas</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card stats-card text-center h-100">
+            <div class="card-body">
+                <i class="bi bi-petri-dish display-1"></i>
+                <h3 class="card-title">{{ total_isolados }}</h3>
+                <p class="card-text">Isolados Miceliais</p>
+                <a href="{{ url_for('isolados') }}" class="btn btn-light">Ver Todos</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card stats-card text-center h-100">
+            <div class="card-body">
+                <i class="bi bi-flask display-1"></i>
+                <h3 class="card-title">{{ total_experimentos }}</h3>
+                <p class="card-text">Experimentos</p>
+                <a href="{{ url_for('experimentos') }}" class="btn btn-light">Ver Todos</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> Ações Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('nova_coleta') }}" class="btn btn-outline-success w-100">
+                            <i class="bi bi-plus-circle"></i><br>
+                            Nova Coleta
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('novo_isolado') }}" class="btn btn-outline-success w-100">
+                            <i class="bi bi-plus-circle"></i><br>
+                            Novo Isolado
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('novo_experimento') }}" class="btn btn-outline-success w-100">
+                            <i class="bi bi-plus-circle"></i><br>
+                            Novo Experimento
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{{ url_for('busca') }}" class="btn btn-outline-success w-100">
+                            <i class="bi bi-search"></i><br>
+                            Buscar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Coletas Recentes -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-collection"></i> Coletas Recentes</h5>
+            </div>
+            <div class="card-body">
+                {% if coletas_recentes %}
+                    <div class="list-group list-group-flush">
+                        {% for coleta in coletas_recentes %}
+                        <a href="{{ url_for('coleta_detalhe', id=coleta.id) }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ coleta.codigo }}</h6>
+                                <small class="text-muted">{{ coleta.data_coleta.strftime('%d/%m/%Y') }}</small>
+                            </div>
+                            <p class="mb-1">
+                                {% if coleta.nome_cientifico %}
+                                    <em>{{ coleta.nome_cientifico }}</em>
+                                {% else %}
+                                    <span class="text-muted">Nome científico não informado</span>
+                                {% endif %}
+                            </p>
+                            <small class="text-muted">{{ coleta.local_coleta }}</small>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('coletas') }}" class="btn btn-primary">Ver Todas as Coletas</a>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">Nenhuma coleta registrada ainda.</p>
+                    <div class="text-center">
+                        <a href="{{ url_for('nova_coleta') }}" class="btn btn-primary">Registrar Primeira Coleta</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Isolados Recentes -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-petri-dish"></i> Isolados Recentes</h5>
+            </div>
+            <div class="card-body">
+                {% if isolados_recentes %}
+                    <div class="list-group list-group-flush">
+                        {% for isolado in isolados_recentes %}
+                        <a href="{{ url_for('isolado_detalhe', id=isolado.id) }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ isolado.codigo }}</h6>
+                                <small class="text-muted">{{ isolado.data_isolamento.strftime('%d/%m/%Y') }}</small>
+                            </div>
+                            <p class="mb-1">
+                                <strong>Coleta:</strong> {{ isolado.coleta.codigo if isolado.coleta else 'N/A' }}
+                            </p>
+                            <small class="text-muted">{{ isolado.meio_cultura }}</small>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('isolados') }}" class="btn btn-info">Ver Todos os Isolados</a>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">Nenhum isolado registrado ainda.</p>
+                    <div class="text-center">
+                        <a href="{{ url_for('novo_isolado') }}" class="btn btn-info">Registrar Primeiro Isolado</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Informações do Sistema -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Sobre o Sistema</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-check-circle text-success"></i> Funcionalidades Principais:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-arrow-right"></i> Cadastro e gerenciamento de coletas de cogumelos</li>
+                            <li><i class="bi bi-arrow-right"></i> Controle de isolados miceliais e repiques</li>
+                            <li><i class="bi bi-arrow-right"></i> Registro de experimentos científicos</li>
+                            <li><i class="bi bi-arrow-right"></i> Sistema de busca integrado</li>
+                            <li><i class="bi bi-arrow-right"></i> Upload e gerenciamento de imagens</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-gear text-primary"></i> Recursos Técnicos:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-arrow-right"></i> Banco de dados SQLite integrado</li>
+                            <li><i class="bi bi-arrow-right"></i> Interface responsiva e moderna</li>
+                            <li><i class="bi bi-arrow-right"></i> Relacionamentos entre entidades</li>
+                            <li><i class="bi bi-arrow-right"></i> API REST para integração</li>
+                            <li><i class="bi bi-arrow-right"></i> Sistema de paginação</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}Experimentos - Sistema para Bioprospecção de Cogumelos{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2><i class="bi bi-flask"></i> Experimentos</h2>
+        <p class="text-muted">Gerenciamento de todos os experimentos científicos registrados no sistema</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('novo_experimento') }}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Novo Experimento
+        </a>
+    </div>
+</div>
+
+<!-- Filtros e Busca -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('experimentos') }}" class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="search" placeholder="Buscar por título ou objetivo..." value="{{ request.args.get('search', '') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" name="status">
+                            <option value="">Todos os status</option>
+                            <option value="Em andamento">Em andamento</option>
+                            <option value="Concluído">Concluído</option>
+                            <option value="Pausado">Pausado</option>
+                            <option value="Cancelado">Cancelado</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-search"></i> Filtrar
+                        </button>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="{{ url_for('experimentos') }}" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-arrow-clockwise"></i> Limpar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Experimentos -->
+<div class="row">
+    <div class="col-12">
+        {% if experimentos.items %}
+            <div class="row">
+                {% for experimento in experimentos.items %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-{{ 'success' if experimento.status == 'Concluído' else 'warning' if experimento.status == 'Em andamento' else 'secondary' }} text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">{{ experimento.status }}</h6>
+                                <small>{{ experimento.data_cadastro.strftime('%d/%m/%Y') }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body">
+                            <h5 class="card-title">{{ experimento.titulo }}</h5>
+                            
+                            {% if experimento.objetivo %}
+                            <p class="card-text">
+                                <strong>Objetivo:</strong><br>
+                                {{ experimento.objetivo[:100] }}{% if experimento.objetivo|length > 100 %}...{% endif %}
+                            </p>
+                            {% endif %}
+                            
+                            <div class="row mb-3">
+                                {% if experimento.coleta %}
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        <i class="bi bi-collection"></i> Coleta:<br>
+                                        <strong>{{ experimento.coleta.codigo }}</strong>
+                                    </small>
+                                </div>
+                                {% endif %}
+                                
+                                {% if experimento.isolado %}
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        <i class="bi bi-petri-dish"></i> Isolado:<br>
+                                        <strong>{{ experimento.isolado.codigo }}</strong>
+                                    </small>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            {% if experimento.data_inicio %}
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar"></i> Início: {{ experimento.data_inicio.strftime('%d/%m/%Y') }}
+                                </small>
+                            </p>
+                            {% endif %}
+                            
+                            {% if experimento.data_fim %}
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar-check"></i> Fim: {{ experimento.data_fim.strftime('%d/%m/%Y') }}
+                                </small>
+                            </p>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="card-footer bg-transparent">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="{{ url_for('experimento_detalhe', id=experimento.id) }}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-eye"></i> Ver Detalhes
+                                </a>
+                                <div class="d-flex gap-2">
+                                    <a href="{{ url_for('editar_experimento', id=experimento.id) }}" class="btn btn-warning btn-sm">
+                                        <i class="bi bi-pencil"></i> Editar
+                                    </a>
+                                    <button type="button" class="btn btn-danger btn-sm delete-experimento-btn" 
+                                            data-experimento-id="{{ experimento.id }}"
+                                            data-experimento-titulo="{{ experimento.titulo }}"
+                                            title="Excluir Experimento">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    <small class="text-muted">
+                                        {% if experimento.data_inicio and experimento.data_fim %}
+                                            {% set duracao = (experimento.data_fim - experimento.data_inicio).days %}
+                                            {{ duracao }} dia(s)
+                                        {% elif experimento.data_inicio %}
+                                            {% set duracao = (experimento.data_cadastro.date() - experimento.data_inicio).days %}
+                                            {{ duracao }} dia(s)
+                                        {% else %}
+                                            Em planejamento
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Paginação -->
+            {% if experimentos.pages > 1 %}
+            <nav aria-label="Navegação de páginas" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if experimentos.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('experimentos', page=experimentos.prev_num) }}">
+                            <i class="bi bi-chevron-left"></i> Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in experimentos.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != experimentos.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('experimentos', page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if experimentos.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('experimentos', page=experimentos.next_num) }}">
+                            Próxima <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-flask display-1 text-muted"></i>
+                <h4 class="text-muted mt-3">Nenhum experimento encontrado</h4>
+                <p class="text-muted">Comece registrando seu primeiro experimento científico.</p>
+                <a href="{{ url_for('novo_experimento') }}" class="btn btn-success btn-lg">
+                    <i class="bi bi-plus-circle"></i> Registrar Primeiro Experimento
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Estatísticas -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="bi bi-graph-up"></i> Estatísticas dos Experimentos</h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h4 class="text-primary">{{ experimentos.total }}</h4>
+                        <p class="text-muted">Total de Experimentos</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-warning">{{ experimentos.items|selectattr('status', 'equalto', 'Em andamento')|list|length }}</h4>
+                        <p class="text-muted">Em Andamento</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-success">{{ experimentos.items|selectattr('status', 'equalto', 'Concluído')|list|length }}</h4>
+                        <p class="text-muted">Concluídos</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h4 class="text-info">{{ experimentos.items|selectattr('data_inicio')|list|length }}</h4>
+                        <p class="text-muted">Com Data de Início</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resumo por Status -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-pie-chart"></i> Distribuição por Status</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% set status_counts = {} %}
+                    {% for experimento in experimentos.items %}
+                        {% if experimento.status not in status_counts %}
+                            {% set _ = status_counts.update({experimento.status: 0}) %}
+                        {% endif %}
+                        {% set _ = status_counts.update({experimento.status: status_counts[experimento.status] + 1}) %}
+                    {% endfor %}
+                    
+                    {% for status, count in status_counts.items() %}
+                    <div class="col-md-3 mb-3">
+                        <div class="text-center">
+                            <h5 class="text-info">{{ count }}</h5>
+                            <small class="text-muted">{{ status }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmação de exclusão de experimento -->
+<div class="modal fade" id="deleteModalExperimento" tabindex="-1" aria-labelledby="deleteModalExperimentoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalExperimentoLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Atenção!</strong> Esta ação não pode ser desfeita.</p>
+                <p>Você está prestes a excluir o experimento:</p>
+                <p class="text-center"><strong id="experimentoTitulo"></strong></p>
+                <p class="text-danger"><strong>Este experimento será permanentemente removido!</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-times"></i> Cancelar
+                </button>
+                <form id="formExclusaoExperimento" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Confirmar Exclusão
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Event delegation para botões de exclusão
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-experimento-btn')) {
+            const button = e.target.closest('.delete-experimento-btn');
+            const experimentoId = button.getAttribute('data-experimento-id');
+            const experimentoTitulo = button.getAttribute('data-experimento-titulo');
+            
+            // Atualizar informações do modal
+            document.getElementById('experimentoTitulo').textContent = experimentoTitulo;
+            
+            // Atualizar action do formulário
+            document.getElementById('formExclusaoExperimento').action = `/experimento/${experimentoId}/excluir`;
+            
+            // Mostrar modal usando Bootstrap 5
+            const modal = new bootstrap.Modal(document.getElementById('deleteModalExperimento'));
+            modal.show();
+        }
+    });
+});
+</script>
+{% endblock %}

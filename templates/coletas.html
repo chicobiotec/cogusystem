@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}Coletas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="bi bi-collection"></i> Coletas</h2>
+                <a href="{{ url_for('nova_coleta') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Nova Coleta
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros e Busca -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="search" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ request.args.get('search', '') }}" 
+                                   placeholder="Código, nome científico, local...">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="substrato" class="form-label">Substrato</label>
+                            <select class="form-select" id="substrato" name="substrato">
+                                <option value="">Todos</option>
+                                <option value="solo" {{ 'selected' if request.args.get('substrato') == 'solo' }}>Solo</option>
+                                <option value="madeira" {{ 'selected' if request.args.get('substrato') == 'madeira' }}>Madeira</option>
+                                <option value="folhas" {{ 'selected' if request.args.get('substrato') == 'folhas' }}>Folhas</option>
+                                <option value="grama" {{ 'selected' if request.args.get('substrato') == 'grama' }}>Grama</option>
+                                <option value="tronco" {{ 'selected' if request.args.get('substrato') == 'tronco' }}>Tronco</option>
+                                <option value="raiz" {{ 'selected' if request.args.get('substrato') == 'raiz' }}>Raiz</option>
+                                <option value="outros" {{ 'selected' if request.args.get('substrato') == 'outros' }}>Outros</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="coletor" class="form-label">Coletor</label>
+                            <input type="text" class="form-control" id="coletor" name="coletor" 
+                                   value="{{ request.args.get('coletor', '') }}" 
+                                   placeholder="Nome do coletor">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search"></i> Filtrar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Coletas -->
+    <div class="row">
+        {% for coleta in coletas.items %}
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100">
+                <!-- Imagem de Preview -->
+                {% if coleta.imagens %}
+                <img src="{{ url_for('uploaded_file', filename=coleta.imagens[0].nome_arquivo) }}" 
+                     class="card-img-top" 
+                     style="height: 200px; object-fit: cover;" 
+                     alt="Imagem da coleta {{ coleta.codigo }}">
+                {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                     style="height: 200px;">
+                    <i class="fas fa-image fa-3x text-muted"></i>
+                </div>
+                {% endif %}
+                
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title mb-0">{{ coleta.codigo }}</h5>
+                        <span class="badge bg-primary">{{ coleta.imagens|length }} img</span>
+                    </div>
+                    
+                    {% if coleta.nome_cientifico %}
+                    <p class="card-text text-muted mb-1">
+                        <em>{{ coleta.nome_cientifico }}</em>
+                    </p>
+                    {% endif %}
+                    
+                    {% if coleta.nome_popular %}
+                    <p class="card-text mb-1">{{ coleta.nome_popular }}</p>
+                    {% endif %}
+                    
+                    <p class="card-text">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar"></i> {{ coleta.data_coleta.strftime('%d/%m/%Y') }}
+                        </small>
+                    </p>
+                    
+                    {% if coleta.local_coleta %}
+                    <p class="card-text">
+                        <small class="text-muted">
+                            <i class="fas fa-map-marker-alt"></i> {{ coleta.local_coleta[:50] }}{% if coleta.local_coleta|length > 50 %}...{% endif %}
+                        </small>
+                    </p>
+                    {% endif %}
+                    
+                    {% if coleta.substrato %}
+                    <p class="card-text">
+                        <span class="badge bg-info">{{ coleta.substrato }}</span>
+                    </p>
+                    {% endif %}
+                    
+                    <div class="row text-center mt-3">
+                        <div class="col-4">
+                            <small class="text-muted">Isolados</small>
+                            <div class="fw-bold text-primary">{{ coleta.isolados|length }}</div>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Experimentos</small>
+                            <div class="fw-bold text-success">{{ coleta.experimentos|length }}</div>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Imagens</small>
+                            <div class="fw-bold text-info">{{ coleta.imagens|length }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-footer">
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('coleta_detalhe', id=coleta.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-eye"></i> Ver
+                        </a>
+                        <a href="{{ url_for('editar_coleta', id=coleta.id) }}" class="btn btn-outline-warning btn-sm">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <button type="button" class="btn btn-outline-danger btn-sm delete-coleta-btn" 
+                                data-coleta-id="{{ coleta.id }}"
+                                data-coleta-codigo="{{ coleta.codigo }}"
+                                data-imagens-count="{{ coleta.imagens|length }}"
+                                data-isolados-count="{{ coleta.isolados|length }}"
+                                data-experimentos-count="{{ coleta.experimentos|length }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-mushroom fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">Nenhuma coleta encontrada</h4>
+                <p class="text-muted">Comece cadastrando a primeira coleta de cogumelo</p>
+                <a href="{{ url_for('nova_coleta') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nova Coleta
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginação -->
+    {% if coletas.pages > 1 %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Navegação de páginas">
+                <ul class="pagination justify-content-center">
+                    {% if coletas.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('coletas', page=coletas.prev_num, search=request.args.get('search', ''), substrato=request.args.get('substrato', ''), coletor=request.args.get('coletor', '')) }}">
+                            <i class="fas fa-chevron-left"></i> Anterior
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in coletas.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != coletas.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('coletas', page=page_num, search=request.args.get('search', ''), substrato=request.args.get('substrato', ''), coletor=request.args.get('coletor', '')) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if coletas.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('coletas', page=coletas.next_num, search=request.args.get('search', ''), substrato=request.args.get('substrato', ''), coletor=request.args.get('coletor', '')) }}">
+                            Próxima <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal de confirmação rápida de exclusão -->
+<div class="modal fade" id="deleteModalRapida" tabindex="-1" aria-labelledby="deleteModalRapidaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalRapidaLabel">
+                    <i class="fas fa-exclamation-triangle"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Atenção!</strong> Esta ação não pode ser desfeita.</p>
+                <p>Você está prestes a excluir a coleta <strong id="coletaCodigo"></strong> e todos os dados relacionados:</p>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-images text-info"></i> <strong id="coletaImagens"></strong> imagem(ns)</li>
+                    <li><i class="bi bi-petri-dish text-primary"></i> <strong id="coletaIsolados"></strong> isolado(s)</li>
+                    <li><i class="bi bi-flask text-success"></i> <strong id="coletaExperimentos"></strong> experimento(s)</li>
+                </ul>
+                <p class="text-danger"><strong>Todos estes dados serão permanentemente removidos!</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <form id="formExclusaoRapida" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Confirmar Exclusão
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Event delegation para botões de exclusão de coletas
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-coleta-btn')) {
+            const button = e.target.closest('.delete-coleta-btn');
+            const coletaId = button.getAttribute('data-coleta-id');
+            const coletaCodigo = button.getAttribute('data-coleta-codigo');
+            const imagensCount = button.getAttribute('data-imagens-count');
+            const isoladosCount = button.getAttribute('data-isolados-count');
+            const experimentosCount = button.getAttribute('data-experimentos-count');
+            
+            // Atualizar informações do modal
+            document.getElementById('coletaCodigo').textContent = coletaCodigo;
+            document.getElementById('coletaImagens').textContent = imagensCount;
+            document.getElementById('coletaIsolados').textContent = isoladosCount;
+            document.getElementById('coletaExperimentos').textContent = experimentosCount;
+            
+            // Atualizar action do formulário
+            document.getElementById('formExclusaoRapida').action = `/coleta/${coletaId}/excluir`;
+            
+            // Mostrar modal usando Bootstrap 5
+            const modal = new bootstrap.Modal(document.getElementById('deleteModalRapida'));
+            modal.show();
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Repique - {{ repique.isolado.codigo }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Início</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('isolados') }}">Isolados</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('isolado_detalhe', id=repique.isolado.id) }}">{{ repique.isolado.codigo }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Editar Repique</li>
+            </ol>
+        </nav>
+        
+        <h2><i class="bi bi-pencil"></i> Editar Repique</h2>
+        <p class="text-muted">Editar repique do isolado {{ repique.isolado.codigo }}</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-arrow-repeat"></i> Informações do Repique</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <!-- Data do Repique -->
+                        <div class="col-md-6 mb-3">
+                            <label for="data_repique" class="form-label">
+                                <i class="bi bi-calendar"></i> Data do Repique <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" class="form-control" id="data_repique" name="data_repique" 
+                                   value="{{ repique.data_repique.strftime('%Y-%m-%d') }}" required>
+                        </div>
+                        
+                        <!-- Número de Placas -->
+                        <div class="col-md-6 mb-3">
+                            <label for="numero_placas" class="form-label">
+                                <i class="bi bi-collection"></i> Número de Placas <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" class="form-control" id="numero_placas" name="numero_placas" 
+                                   min="1" max="100" value="{{ repique.numero_placas }}" required>
+                            <div class="form-text">Quantidade de placas de Petri utilizadas</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Meio de Cultura -->
+                        <div class="col-md-6 mb-3">
+                            <label for="meio_cultura" class="form-label">
+                                <i class="bi bi-droplet"></i> Meio de Cultura <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="meio_cultura" name="meio_cultura" required>
+                                <option value="">Selecione o meio</option>
+                                <option value="PDA" {{ 'selected' if repique.meio_cultura == 'PDA' }}>PDA (Potato Dextrose Agar)</option>
+                                <option value="MEA" {{ 'selected' if repique.meio_cultura == 'MEA' }}>MEA (Malt Extract Agar)</option>
+                                <option value="SDA" {{ 'selected' if repique.meio_cultura == 'SDA' }}>SDA (Sabouraud Dextrose Agar)</option>
+                                <option value="Czapek" {{ 'selected' if repique.meio_cultura == 'Czapek' }}>Czapek Dox Agar</option>
+                                <option value="YMA" {{ 'selected' if repique.meio_cultura == 'YMA' }}>YMA (Yeast Malt Agar)</option>
+                                <option value="outros" {{ 'selected' if repique.meio_cultura not in ['PDA', 'MEA', 'SDA', 'Czapek', 'YMA'] }}>Outros</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Outros Meios -->
+                        <div class="col-md-6 mb-3" id="outros_meios_div" style="display: {{ 'block' if repique.meio_cultura not in ['PDA', 'MEA', 'SDA', 'Czapek', 'YMA'] else 'none' }};">
+                            <label for="outros_meios" class="form-label">
+                                <i class="bi bi-pencil"></i> Especificar Outro Meio
+                            </label>
+                            <input type="text" class="form-control" id="outros_meios" name="outros_meios"
+                                   value="{{ repique.meio_cultura if repique.meio_cultura not in ['PDA', 'MEA', 'SDA', 'Czapek', 'YMA'] else '' }}"
+                                   placeholder="Descreva o meio de cultura">
+                        </div>
+                    </div>
+                    
+                    <!-- Observações -->
+                    <div class="mb-3">
+                        <label for="observacoes" class="form-label">
+                            <i class="bi bi-journal-text"></i> Observações
+                        </label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" rows="4"
+                                  placeholder="Observações sobre o repique, condições de incubação, contaminação, etc.">{{ repique.observacoes or '' }}</textarea>
+                    </div>
+                    
+                    <!-- Botões -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('isolado_detalhe', id=repique.isolado.id) }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Atualizar Repique
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Painel de Ajuda -->
+    <div class="col-lg-4">
+        <!-- Informações do Isolado -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-petri-dish"></i> Isolado {{ repique.isolado.codigo }}</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Coleta:</strong> 
+                    {% if repique.isolado.coleta %}
+                        <a href="{{ url_for('coleta_detalhe', id=repique.isolado.coleta.id) }}" 
+                           class="text-decoration-none">
+                            {{ repique.isolado.coleta.codigo }}
+                        </a>
+                    {% else %}
+                        <span class="text-muted">N/A</span>
+                    {% endif %}
+                </p>
+                <p><strong>Meio Original:</strong> {{ repique.isolado.meio_cultura }}</p>
+                <p><strong>Data Isolamento:</strong> {{ repique.isolado.data_isolamento.strftime('%d/%m/%Y') }}</p>
+                <p><strong>Repiques Atuais:</strong> {{ repique.isolado.repiques|length }}</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0"><i class="bi bi-question-circle"></i> Dicas para Edição</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Data:</strong> Mantenha o registro da data correta
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Meio:</strong> Atualize conforme necessário
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Quantidade:</strong> Verifique o número de placas
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success"></i>
+                        <strong>Observações:</strong> Mantenha as observações atualizadas
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Campos Obrigatórios</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Os seguintes campos são obrigatórios:</p>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-asterisk text-danger"></i> Data do Repique</li>
+                    <li><i class="bi bi-asterisk text-danger"></i> Número de Placas</li>
+                    <li><i class="bi bi-asterisk text-danger"></i> Meio de Cultura</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Mostrar campo para outros meios quando selecionado
+    document.getElementById('meio_cultura').addEventListener('change', function() {
+        const outrosDiv = document.getElementById('outros_meios_div');
+        const outrosInput = document.getElementById('outros_meios');
+        
+        if (this.value === 'outros') {
+            outrosDiv.style.display = 'block';
+            outrosInput.required = true;
+        } else {
+            outrosDiv.style.display = 'none';
+            outrosInput.required = false;
+            outrosInput.value = '';
+        }
+    });
+    
+    // Validação do formulário
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const dataRepique = document.getElementById('data_repique').value;
+        const numeroPlacas = document.getElementById('numero_placas').value;
+        const meioCultura = document.getElementById('meio_cultura').value;
+        
+        if (!dataRepique || !numeroPlacas || !meioCultura) {
+            e.preventDefault();
+            alert('Por favor, preencha todos os campos obrigatórios.');
+            return false;
+        }
+        
+        // Validar número de placas
+        if (parseInt(numeroPlacas) < 1 || parseInt(numeroPlacas) > 100) {
+            e.preventDefault();
+            alert('O número de placas deve estar entre 1 e 100.');
+            return false;
+        }
+        
+        // Validar data (não pode ser no futuro)
+        const hoje = new Date();
+        const dataRepiqueObj = new Date(dataRepique);
+        if (dataRepiqueObj > hoje) {
+            e.preventDefault();
+            alert('A data do repique não pode ser no futuro.');
+            return false;
+        }
+        
+        return true;
+    });
+</script>
+{% endblock %}
