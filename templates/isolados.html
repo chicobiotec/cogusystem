@@ -59,7 +59,8 @@
                     <thead class="table-dark">
                         <tr>
                             <th>Código</th>
-                            <th>Coleta</th>
+                            <th>Origem</th>
+                            <th>Espécie</th>
                             <th>Data Isolamento</th>
                             <th>Meio Cultura</th>
                             <th>Temperatura</th>
@@ -75,13 +76,35 @@
                                 <strong>{{ isolado.codigo }}</strong>
                             </td>
                             <td>
-                                {% if isolado.coleta %}
-                                    <a href="{{ url_for('coleta_detalhe', id=isolado.coleta.id) }}" 
-                                       class="text-decoration-none">
-                                        <i class="bi bi-collection"></i> {{ isolado.coleta.codigo }}
-                                    </a>
+                                {% set origem_tipo = isolado.origem_tipo or 'coleta' %}
+                                {% if origem_tipo == 'coleta' %}
+                                    {% if isolado.coleta %}
+                                        <a href="{{ url_for('coleta_detalhe', id=isolado.coleta.id) }}" 
+                                           class="text-decoration-none">
+                                            <i class="bi bi-collection"></i> {{ isolado.coleta.codigo }}
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">Coleta não informada</span>
+                                    {% endif %}
+                                {% elif origem_tipo == 'adquirida' %}
+                                    <span class="badge bg-info text-dark">Adquirido</span>
+                                    {% if isolado.origem_instituicao %}
+                                        <div class="small mt-1"><i class="bi bi-building"></i> {{ isolado.origem_instituicao }}</div>
+                                    {% endif %}
+                                {% elif origem_tipo == 'doada' %}
+                                    <span class="badge bg-warning text-dark">Doado</span>
+                                    {% if isolado.origem_instituicao %}
+                                        <div class="small mt-1"><i class="bi bi-building"></i> {{ isolado.origem_instituicao }}</div>
+                                    {% endif %}
                                 {% else %}
-                                    <span class="text-muted">N/A</span>
+                                    <span class="text-muted">Origem não informada</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if isolado.especie_nome_cientifico %}
+                                    <em>{{ isolado.especie_nome_cientifico }}</em>
+                                {% else %}
+                                    <span class="text-muted">Não informado</span>
                                 {% endif %}
                             </td>
                             <td>{{ isolado.data_isolamento.strftime('%d/%m/%Y') }}</td>

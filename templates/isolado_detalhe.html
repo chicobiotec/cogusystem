@@ -53,19 +53,47 @@
                 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <strong><i class="bi bi-collection"></i> Coleta de Origem:</strong><br>
-                        {% if isolado.coleta %}
-                            <a href="{{ url_for('coleta_detalhe', id=isolado.coleta.id) }}" 
-                               class="text-decoration-none">
-                                <i class="bi bi-collection"></i> {{ isolado.coleta.codigo }}
-                            </a>
+                        <strong><i class="bi bi-geo"></i> Origem do Isolado:</strong><br>
+                        {% set origem_tipo = isolado.origem_tipo or 'coleta' %}
+                        {% if origem_tipo == 'coleta' %}
+                            <span class="badge bg-success">Coletado pelo laboratório</span>
+                            {% if isolado.coleta %}
+                            <div class="mt-2">
+                                <a href="{{ url_for('coleta_detalhe', id=isolado.coleta.id) }}" class="text-decoration-none">
+                                    <i class="bi bi-collection"></i> {{ isolado.coleta.codigo }}
+                                </a>
+                            </div>
+                            {% else %}
+                            <div class="mt-2 text-muted">Coleta não informada</div>
+                            {% endif %}
+                        {% elif origem_tipo == 'adquirida' %}
+                            <span class="badge bg-info text-dark">Adquirido</span>
+                            {% if isolado.origem_instituicao %}
+                            <div class="mt-2"><i class="bi bi-building"></i> {{ isolado.origem_instituicao }}</div>
+                            {% endif %}
+                        {% elif origem_tipo == 'doada' %}
+                            <span class="badge bg-warning text-dark">Doado</span>
+                            {% if isolado.origem_instituicao %}
+                            <div class="mt-2"><i class="bi bi-building"></i> {{ isolado.origem_instituicao }}</div>
+                            {% endif %}
                         {% else %}
-                            <span class="text-muted">N/A</span>
+                            <span class="text-muted">Origem não informada</span>
                         {% endif %}
                     </div>
                     <div class="col-md-6 mb-3">
                         <strong><i class="bi bi-droplet"></i> Meio de Cultura:</strong><br>
                         <span class="badge bg-info">{{ isolado.meio_cultura }}</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong><i class="bi bi-tree"></i> Nome Científico da Espécie:</strong><br>
+                        {% if isolado.especie_nome_cientifico %}
+                            <em>{{ isolado.especie_nome_cientifico }}</em>
+                        {% else %}
+                            <span class="text-muted">Não informado</span>
+                        {% endif %}
                     </div>
                 </div>
                 
@@ -82,6 +110,41 @@
                 <div class="mb-3">
                     <strong><i class="bi bi-journal-text"></i> Observações:</strong><br>
                     <p class="mt-2">{{ isolado.observacoes }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-images"></i> Imagens do Isolado</h5>
+            </div>
+            <div class="card-body">
+                {% if isolado.imagens %}
+                <div class="row g-3">
+                    {% for imagem in isolado.imagens %}
+                    <div class="col-md-4 col-sm-6">
+                        <div class="card h-100">
+                            <img src="{{ url_for('uploaded_file', filename=imagem.nome_arquivo) }}"
+                                 class="card-img-top open-image-modal"
+                                 style="height: 200px; object-fit: cover; cursor: pointer;"
+                                 data-image-src="{{ url_for('uploaded_file', filename=imagem.nome_arquivo) }}"
+                                 data-image-description="{{ imagem.descricao or 'Sem descrição' }}"
+                                 alt="Imagem do isolado">
+                            <div class="card-body p-2">
+                                {% if imagem.descricao %}
+                                <small class="text-muted">{{ imagem.descricao }}</small><br>
+                                {% endif %}
+                                <small class="text-muted">Upload: {{ imagem.data_upload.strftime('%d/%m/%Y') }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="bi bi-images display-4"></i>
+                    <p class="mt-2 mb-0">Nenhuma imagem cadastrada para este isolado.</p>
                 </div>
                 {% endif %}
             </div>
@@ -244,6 +307,12 @@
                         <small class="text-muted">Experimentos</small>
                     </div>
                 </div>
+                <div class="row text-center mt-3">
+                    <div class="col-12">
+                        <h4 class="text-info">{{ isolado.imagens|length }}</h4>
+                        <small class="text-muted">Imagens</small>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -286,6 +355,20 @@
                    class="btn btn-sm btn-outline-info w-100">
                     <i class="bi bi-eye"></i> Ver Coleta
                 </a>
+            </div>
+        </div>
+        {% elif isolado.origem_instituicao %}
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-building"></i> Instituição Fornecedora</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Instituição:</strong> {{ isolado.origem_instituicao }}</p>
+                {% if isolado.origem_tipo == 'adquirida' %}
+                <p><strong>Tipo de origem:</strong> Adquirido</p>
+                {% elif isolado.origem_tipo == 'doada' %}
+                <p><strong>Tipo de origem:</strong> Doado</p>
+                {% endif %}
             </div>
         </div>
         {% endif %}
@@ -349,6 +432,22 @@
     </div>
 </div>
 
+<!-- Modal de Visualização de Imagem -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Visualização da Imagem</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid mb-3" alt="Imagem do isolado">
+                <p id="modalDescription" class="text-muted"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // Event delegation para botões de exclusão de repiques
 document.addEventListener('DOMContentLoaded', function() {
@@ -368,7 +467,20 @@ document.addEventListener('DOMContentLoaded', function() {
             const modal = new bootstrap.Modal(document.getElementById('deleteModalRepique'));
             modal.show();
         }
+
+        if (e.target.closest('.open-image-modal')) {
+            const img = e.target.closest('.open-image-modal');
+            const imageSrc = img.getAttribute('data-image-src');
+            const description = img.getAttribute('data-image-description');
+            openImageModal(imageSrc, description);
+        }
     });
 });
+
+function openImageModal(imageSrc, description) {
+    document.getElementById('modalImage').src = imageSrc;
+    document.getElementById('modalDescription').textContent = description;
+    new bootstrap.Modal(document.getElementById('imageModal')).show();
+}
 </script>
 {% endblock %}

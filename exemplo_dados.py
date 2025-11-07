@@ -4,7 +4,7 @@ Script para popular o banco de dados com dados de exemplo
 Execute este script após criar o banco de dados para ter dados para testar
 """
 
-from app import app, db, Coleta, Isolado, Repique, Experimento, ImagemColeta
+from app import app, db, Coleta, Isolado, Repique, Experimento, ImagemColeta, ImagemIsolado
 from datetime import datetime, date
 
 def criar_dados_exemplo():
@@ -14,6 +14,7 @@ def criar_dados_exemplo():
         # Limpar dados existentes
         print("🧹 Limpando dados existentes...")
         db.session.query(Repique).delete()
+        db.session.query(ImagemIsolado).delete()
         db.session.query(ImagemColeta).delete()
         db.session.query(Experimento).delete()
         db.session.query(Isolado).delete()
@@ -171,6 +172,8 @@ def criar_dados_exemplo():
         isolado1 = Isolado(
             codigo='ISO001',
             coleta_id=coleta1.id,
+            origem_tipo='coleta',
+            especie_nome_cientifico=coleta1.nome_cientifico,
             data_isolamento=date(2024, 3, 16),
             meio_cultura='PDA',
             temperatura_incubacao=25.0,
@@ -182,6 +185,8 @@ def criar_dados_exemplo():
         isolado2 = Isolado(
             codigo='ISO002',
             coleta_id=coleta2.id,
+            origem_tipo='coleta',
+            especie_nome_cientifico=coleta2.nome_cientifico,
             data_isolamento=date(2024, 3, 21),
             meio_cultura='MEA',
             temperatura_incubacao=28.0,
@@ -193,6 +198,8 @@ def criar_dados_exemplo():
         isolado3 = Isolado(
             codigo='ISO003',
             coleta_id=coleta3.id,
+            origem_tipo='coleta',
+            especie_nome_cientifico=coleta3.nome_cientifico,
             data_isolamento=date(2024, 4, 6),
             meio_cultura='PDA',
             temperatura_incubacao=26.0,
@@ -204,6 +211,8 @@ def criar_dados_exemplo():
         isolado4 = Isolado(
             codigo='ISO004',
             coleta_id=coleta4.id,
+            origem_tipo='coleta',
+            especie_nome_cientifico=coleta4.nome_cientifico,
             data_isolamento=date(2024, 4, 13),
             meio_cultura='MEA',
             temperatura_incubacao=30.0,

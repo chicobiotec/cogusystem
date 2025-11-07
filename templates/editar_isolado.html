@@ -26,7 +26,7 @@
                 <h5 class="mb-0"><i class="bi bi-petri-dish"></i> Informações do Isolado</h5>
             </div>
             <div class="card-body">
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
                     <div class="row">
                         <!-- Código do Isolado -->
                         <div class="col-md-6 mb-3">
@@ -38,20 +38,107 @@
                             <div class="form-text">Código único para identificação do isolado</div>
                         </div>
                         
-                        <!-- Coleta -->
+                        <!-- Tipo de Origem -->
                         <div class="col-md-6 mb-3">
-                            <label for="coleta_id" class="form-label">
-                                <i class="bi bi-collection"></i> Coleta de Origem <span class="text-danger">*</span>
+                            <label for="origem_tipo" class="form-label">
+                                <i class="bi bi-geo"></i> Origem do Isolado <span class="text-danger">*</span>
                             </label>
-                            <select class="form-select" id="coleta_id" name="coleta_id" required disabled>
-                                <option value="{{ isolado.coleta_id }}" selected>
-                                    {{ isolado.coleta.codigo }} - {{ isolado.coleta.nome_cientifico or isolado.coleta.nome_popular or 'Sem identificação' }}
-                                </option>
+                            {% set origem_atual = isolado.origem_tipo or 'coleta' %}
+                            <select class="form-select" id="origem_tipo" name="origem_tipo" required>
+                                <option value="coleta" {% if origem_atual == 'coleta' %}selected{% endif %}>Coletado pelo laboratório</option>
+                                <option value="adquirida" {% if origem_atual == 'adquirida' %}selected{% endif %}>Adquirido de empresa</option>
+                                <option value="doada" {% if origem_atual == 'doada' %}selected{% endif %}>Doado por instituição</option>
                             </select>
-                            <div class="form-text">Coleta de onde foi obtido o isolado (não pode ser alterada)</div>
+                            <div class="form-text">Atualize a forma como o isolado foi obtido</div>
                         </div>
                     </div>
                     
+                    <div class="row">
+                        <!-- Coleta -->
+                        <div class="col-md-6 mb-3 {% if origem_atual != 'coleta' %}d-none{% endif %}" id="coleta_group">
+                            <label for="coleta_id" class="form-label">
+                                <i class="bi bi-collection"></i> Coleta de Origem <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="coleta_id" name="coleta_id" {% if origem_atual == 'coleta' %}required{% endif %}>
+                                <option value="">Selecione a coleta</option>
+                                {% for coleta in coletas %}
+                                <option value="{{ coleta.id }}" data-especie="{{ coleta.nome_cientifico or '' }}" {% if coleta.id == isolado.coleta_id %}selected{% endif %}>
+                                    {{ coleta.codigo }} - {{ coleta.nome_cientifico or coleta.nome_popular or 'Sem identificação' }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Selecione a coleta associada ao isolado</div>
+                        </div>
+
+                        <!-- Instituição fornecedora -->
+                        <div class="col-md-6 mb-3 {% if origem_atual == 'coleta' %}d-none{% endif %}" id="instituicao_group">
+                            <label for="origem_instituicao" class="form-label">
+                                <i class="bi bi-building"></i> Instituição fornecedora <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="origem_instituicao" name="origem_instituicao"
+                                   value="{{ isolado.origem_instituicao or '' }}"
+                                   placeholder="Empresa ou instituição responsável">
+                            <div class="form-text">Informe quem forneceu o isolado adquirido ou doado</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Espécie -->
+                        <div class="col-md-6 mb-3" id="especie_group">
+                            <label for="especie_nome_cientifico" class="form-label">
+                                <i class="bi bi-tree"></i> Nome Científico da Espécie <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="especie_nome_cientifico" name="especie_nome_cientifico"
+                                   value="{{ isolado.especie_nome_cientifico or '' }}"
+                                   placeholder="Ex: Pleurotus ostreatus">
+                            <div class="form-text">Preenchido automaticamente para isolados de coletas</div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5><i class="bi bi-images"></i> Novas Imagens do Isolado</h5>
+                            <div class="mb-3">
+                                <label for="imagens_isolado" class="form-label">Selecionar Imagens</label>
+                                <input type="file" class="form-control" id="imagens_isolado" name="imagens_isolado" multiple accept="image/*">
+                                <div class="form-text">Selecione novas imagens para adicionar ao isolado (JPG, PNG, GIF)</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="descricao_imagem_isolado" class="form-label">Descrição das Novas Imagens</label>
+                                <textarea class="form-control" id="descricao_imagem_isolado" name="descricao_imagem_isolado" rows="2"
+                                          placeholder="Descrição aplicada a todas as novas imagens"></textarea>
+                            </div>
+
+                            <div id="imagePreviewIsolado" class="row g-2"></div>
+                        </div>
+                    </div>
+
+                    {% if isolado.imagens %}
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <h6><i class="bi bi-collection"></i> Imagens já cadastradas</h6>
+                            <div class="row g-2">
+                                {% for imagem in isolado.imagens %}
+                                <div class="col-md-3 col-sm-4 col-6">
+                                    <div class="card">
+                                        <img src="{{ url_for('uploaded_file', filename=imagem.nome_arquivo) }}"
+                                             class="card-img-top"
+                                             style="height: 120px; object-fit: cover;" alt="Imagem existente">
+                                        <div class="card-body p-2">
+                                            {% if imagem.descricao %}
+                                            <small class="text-muted d-block">{{ imagem.descricao }}</small>
+                                            {% endif %}
+                                            <small class="text-muted">{{ imagem.data_upload.strftime('%d/%m/%Y') }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <div class="row">
                         <!-- Data de Isolamento -->
                         <div class="col-md-6 mb-3">
@@ -142,7 +229,7 @@
                     </li>
                     <li class="mb-2">
                         <i class="bi bi-check-circle text-success"></i>
-                        <strong>Coleta:</strong> A coleta de origem não pode ser alterada
+                        <strong>Origem:</strong> Ajuste a coleta ou a instituição fornecedora conforme necessário
                     </li>
                     <li class="mb-2">
                         <i class="bi bi-check-circle text-success"></i>
@@ -168,6 +255,10 @@
                 <p class="text-muted">Os seguintes campos são obrigatórios:</p>
                 <ul class="list-unstyled">
                     <li><i class="bi bi-asterisk text-danger"></i> Código do Isolado</li>
+                    <li><i class="bi bi-asterisk text-danger"></i> Origem do Isolado</li>
+                    <li><i class="bi bi-asterisk text-danger"></i> Coleta de Origem (quando coletado)</li>
+                    <li><i class="bi bi-asterisk text-danger"></i> Instituição fornecedora (quando adquirido ou doado)</li>
+                    <li><i class="bi bi-asterisk text-danger"></i> Nome Científico da Espécie</li>
                     <li><i class="bi bi-asterisk text-danger"></i> Data de Isolamento</li>
                     <li><i class="bi bi-asterisk text-danger"></i> Meio de Cultura</li>
                 </ul>
@@ -190,48 +281,150 @@
 
 {% block scripts %}
 <script>
-    // Mostrar campo para outros meios quando selecionado
-    document.getElementById('meio_cultura').addEventListener('change', function() {
-        const outrosDiv = document.getElementById('outros_meios_div');
-        const outrosInput = document.getElementById('outros_meios');
-        
-        if (this.value === 'outros') {
+    const meioCulturaSelect = document.getElementById('meio_cultura');
+    const outrosDiv = document.getElementById('outros_meios_div');
+    const outrosInput = document.getElementById('outros_meios');
+    const origemTipoSelect = document.getElementById('origem_tipo');
+    const coletaGroup = document.getElementById('coleta_group');
+    const coletaSelect = document.getElementById('coleta_id');
+    const instituicaoGroup = document.getElementById('instituicao_group');
+    const instituicaoInput = document.getElementById('origem_instituicao');
+    const especieInput = document.getElementById('especie_nome_cientifico');
+    const imagensInput = document.getElementById('imagens_isolado');
+    const imagensPreview = document.getElementById('imagePreviewIsolado');
+    const especieInput = document.getElementById('especie_nome_cientifico');
+
+    function updateMeioFields() {
+        if (meioCulturaSelect.value === 'outros') {
             outrosDiv.style.display = 'block';
             outrosInput.required = true;
         } else {
             outrosDiv.style.display = 'none';
             outrosInput.required = false;
-            outrosInput.value = '';
+            // Manter o valor existente se já estiver preenchido manualmente
         }
-    });
-    
+    }
+
+    function updateEspecieFromColeta() {
+        if (!coletaSelect) {
+            especieInput.value = '';
+            return;
+        }
+        const option = coletaSelect.selectedOptions[0];
+        const especie = option ? option.getAttribute('data-especie') || '' : '';
+        especieInput.value = especie;
+    }
+
+    function updateOrigemFields() {
+        const tipo = origemTipoSelect.value;
+        if (tipo === 'coleta') {
+            coletaGroup.classList.remove('d-none');
+            instituicaoGroup.classList.add('d-none');
+            coletaSelect.required = true;
+            instituicaoInput.required = false;
+            especieInput.readOnly = true;
+            especieInput.required = false;
+            updateEspecieFromColeta();
+        } else {
+            coletaGroup.classList.add('d-none');
+            instituicaoGroup.classList.remove('d-none');
+            coletaSelect.required = false;
+            instituicaoInput.required = true;
+            especieInput.readOnly = false;
+            especieInput.required = true;
+        }
+    }
+
+    meioCulturaSelect.addEventListener('change', updateMeioFields);
+    origemTipoSelect.addEventListener('change', updateOrigemFields);
+    if (coletaSelect) {
+        coletaSelect.addEventListener('change', function() {
+            if (origemTipoSelect.value === 'coleta') {
+                updateEspecieFromColeta();
+            }
+        });
+    }
+
+    if (imagensInput) {
+        imagensInput.addEventListener('change', function(e) {
+            imagensPreview.innerHTML = '';
+            const arquivos = Array.from(e.target.files || []);
+            arquivos.forEach((file) => {
+                if (!file.type.startsWith('image/')) {
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-3 col-sm-4 col-6';
+                    col.innerHTML = `
+                        <div class="card">
+                            <img src="${ev.target.result}" class="card-img-top" style="height: 150px; object-fit: cover;" alt="Preview">
+                            <div class="card-body p-2">
+                                <small class="text-muted">${file.name}</small>
+                            </div>
+                        </div>
+                    `;
+                    imagensPreview.appendChild(col);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+    }
+
+    updateMeioFields();
+    updateOrigemFields();
+    if (origemTipoSelect.value === 'coleta') {
+        updateEspecieFromColeta();
+    }
+
     // Validação do formulário
     document.querySelector('form').addEventListener('submit', function(e) {
         const codigo = document.getElementById('codigo').value.trim();
         const dataIsolamento = document.getElementById('data_isolamento').value;
-        const meioCultura = document.getElementById('meio_cultura').value;
-        
+        const meioCultura = meioCulturaSelect.value;
+        const origemTipo = origemTipoSelect.value;
+        const coletaId = coletaSelect ? coletaSelect.value : '';
+        const origemInstituicao = instituicaoInput ? instituicaoInput.value.trim() : '';
+        const especieNome = especieInput ? especieInput.value.trim() : '';
+
         if (!codigo || !dataIsolamento || !meioCultura) {
             e.preventDefault();
             alert('Por favor, preencha todos os campos obrigatórios.');
             return false;
         }
-        
-        // Validar formato do código
+
+        if (origemTipo === 'coleta' && !coletaId) {
+            e.preventDefault();
+            alert('Selecione a coleta associada a este isolado.');
+            return false;
+        }
+
+        if (origemTipo !== 'coleta' && !origemInstituicao) {
+            e.preventDefault();
+            alert('Informe a instituição responsável pela aquisição ou doação do isolado.');
+            return false;
+        }
+
+        if (origemTipo !== 'coleta' && !especieNome) {
+            e.preventDefault();
+            alert('Informe o nome científico da espécie para isolados adquiridos ou doados.');
+            return false;
+        }
+
         if (codigo.length < 3) {
             e.preventDefault();
             alert('O código do isolado deve ter pelo menos 3 caracteres.');
             return false;
         }
-        
-        // Validar temperatura se informada
+
         const temperatura = document.getElementById('temperatura_incubacao').value;
         if (temperatura && (parseFloat(temperatura) < 0 || parseFloat(temperatura) > 50)) {
             e.preventDefault();
             alert('A temperatura deve estar entre 0°C e 50°C.');
             return false;
         }
-        
+
         return true;
     });
 </script>

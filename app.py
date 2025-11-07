@@ -32,6 +32,16 @@ class ImagemColeta(db.Model):
     # Relacionamento com Coleta
     coleta = db.relationship('Coleta', back_populates='imagens')
 
+
+class ImagemIsolado(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    isolado_id = db.Column(db.Integer, db.ForeignKey('isolado.id'), nullable=False)
+    nome_arquivo = db.Column(db.String(255), nullable=False)
+    descricao = db.Column(db.String(500))
+    data_upload = db.Column(db.DateTime, default=datetime.utcnow)
+
+    isolado = db.relationship('Isolado', back_populates='imagens')
+
 class Coleta(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     codigo = db.Column(db.String(50), unique=True, nullable=False)
@@ -53,7 +63,10 @@ class Coleta(db.Model):
 class Isolado(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     codigo = db.Column(db.String(50), unique=True, nullable=False)
-    coleta_id = db.Column(db.Integer, db.ForeignKey('coleta.id'), nullable=False)
+    coleta_id = db.Column(db.Integer, db.ForeignKey('coleta.id'), nullable=True)
+    origem_tipo = db.Column(db.String(20), nullable=False, default='coleta')
+    origem_instituicao = db.Column(db.String(255))
+    especie_nome_cientifico = db.Column(db.String(200))
     data_isolamento = db.Column(db.Date, nullable=False)
     meio_cultura = db.Column(db.String(100))
     temperatura_incubacao = db.Column(db.Float)
@@ -63,6 +76,7 @@ class Isolado(db.Model):
     # Relacionamentos
     repiques = db.relationship('Repique', backref='isolado', lazy=True, cascade='all, delete-orphan')
     experimentos = db.relationship('Experimento', backref='isolado', lazy=True, cascade='all, delete-orphan')
+    imagens = db.relationship('ImagemIsolado', back_populates='isolado', lazy=True, cascade='all, delete-orphan')
 
 class Repique(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -267,9 +281,38 @@ def isolado_detalhe(id):
 def novo_isolado():
     if request.method == 'POST':
         try:
+            origem_tipo = request.form.get('origem_tipo', 'coleta')
+            origem_instituicao = request.form.get('origem_instituicao', '').strip()
+            coleta_id_raw = request.form.get('coleta_id')
+            especie_nome = request.form.get('especie_nome_cientifico', '').strip()
+
+            if origem_tipo not in ['coleta', 'adquirida', 'doada']:
+                origem_tipo = 'coleta'
+
+            if origem_tipo == 'coleta':
+                if not coleta_id_raw:
+                    raise ValueError('Selecione a coleta de origem para isolados provenientes de coleta.')
+                coleta_id = int(coleta_id_raw)
+                origem_instituicao = None
+                coleta = Coleta.query.get(coleta_id)
+                if not coleta:
+                    raise ValueError('Coleta selecionada não encontrada.')
+                especie_nome = (coleta.nome_cientifico or '').strip()
+                if not especie_nome:
+                    raise ValueError('A coleta selecionada não possui nome científico cadastrado. Atualize a coleta antes de prosseguir.')
+            else:
+                coleta_id = None
+                if not origem_instituicao:
+                    raise ValueError('Informe a instituição responsável pela aquisição ou doação do isolado.')
+                if not especie_nome:
+                    raise ValueError('Informe o nome científico da espécie para isolados adquiridos ou doados.')
+
             isolado = Isolado(
                 codigo=request.form['codigo'],
-                coleta_id=request.form['coleta_id'],
+                coleta_id=coleta_id,
+                origem_tipo=origem_tipo,
+                origem_instituicao=origem_instituicao if origem_instituicao else None,
+                especie_nome_cientifico=especie_nome if especie_nome else None,
                 data_isolamento=datetime.strptime(request.form['data_isolamento'], '%Y-%m-%d').date(),
                 meio_cultura=request.form['meio_cultura'],
                 temperatura_incubacao=float(request.form['temperatura_incubacao']) if request.form['temperatura_incubacao'] else None,
@@ -277,6 +320,24 @@ def novo_isolado():
             )
             
             db.session.add(isolado)
+            db.session.flush()
+
+            if 'imagens_isolado' in request.files:
+                files = request.files.getlist('imagens_isolado')
+                for file in files:
+                    if file and file.filename != '':
+                        filename = secure_filename(file.filename)
+                        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                        filename = f"{timestamp}_{filename}"
+                        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                        file.save(filepath)
+
+                        imagem = ImagemIsolado(
+                            isolado_id=isolado.id,
+                            nome_arquivo=filename,
+                            descricao=request.form.get('descricao_imagem_isolado', '')
+                        )
+                        db.session.add(imagem)
             db.session.commit()
             flash('Isolado cadastrado com sucesso!', 'success')
             return redirect(url_for('isolados'))
@@ -410,13 +471,61 @@ def editar_isolado(id):
             isolado.codigo = request.form['codigo']
             isolado.data_isolamento = datetime.strptime(request.form['data_isolamento'], '%Y-%m-%d').date()
             isolado.meio_cultura = request.form['meio_cultura']
-            isolado.temperatura_incubacao = request.form.get('temperatura_incubacao') or None
+            temperatura = request.form.get('temperatura_incubacao')
+            isolado.temperatura_incubacao = float(temperatura) if temperatura else None
             isolado.observacoes = request.form.get('observacoes', '')
+            especie_nome = request.form.get('especie_nome_cientifico', '').strip()
+
+            origem_tipo = request.form.get('origem_tipo', 'coleta')
+            origem_instituicao = request.form.get('origem_instituicao', '').strip()
+            coleta_id_raw = request.form.get('coleta_id')
+
+            if origem_tipo not in ['coleta', 'adquirida', 'doada']:
+                origem_tipo = 'coleta'
+
+            if origem_tipo == 'coleta':
+                if not coleta_id_raw:
+                    raise ValueError('Selecione a coleta de origem para isolados provenientes de coleta.')
+                isolado.coleta_id = int(coleta_id_raw)
+                isolado.origem_instituicao = None
+                coleta = Coleta.query.get(isolado.coleta_id)
+                if not coleta:
+                    raise ValueError('Coleta selecionada não encontrada.')
+                isolado.especie_nome_cientifico = (coleta.nome_cientifico or '').strip()
+                if not isolado.especie_nome_cientifico:
+                    raise ValueError('A coleta selecionada não possui nome científico cadastrado. Atualize a coleta antes de prosseguir.')
+            else:
+                isolado.coleta_id = None
+                if not origem_instituicao:
+                    raise ValueError('Informe a instituição responsável pela aquisição ou doação do isolado.')
+                isolado.origem_instituicao = origem_instituicao
+                if not especie_nome:
+                    raise ValueError('Informe o nome científico da espécie para isolados adquiridos ou doados.')
+                isolado.especie_nome_cientifico = especie_nome
+
+            isolado.origem_tipo = origem_tipo
             
             # Se meio_cultura for 'outros', usar o valor do campo outros_meios
             if isolado.meio_cultura == 'outros':
                 isolado.meio_cultura = request.form.get('outros_meios', '')
             
+            if 'imagens_isolado' in request.files:
+                files = request.files.getlist('imagens_isolado')
+                for file in files:
+                    if file and file.filename != '':
+                        filename = secure_filename(file.filename)
+                        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                        filename = f"{timestamp}_{filename}"
+                        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                        file.save(filepath)
+
+                        imagem = ImagemIsolado(
+                            isolado_id=isolado.id,
+                            nome_arquivo=filename,
+                            descricao=request.form.get('descricao_imagem_isolado', '')
+                        )
+                        db.session.add(imagem)
+
             db.session.commit()
             flash('Isolado atualizado com sucesso!', 'success')
             return redirect(url_for('isolado_detalhe', id=isolado.id))
