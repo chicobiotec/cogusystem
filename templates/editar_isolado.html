@@ -113,32 +113,6 @@
                             <div id="imagePreviewIsolado" class="row g-2"></div>
                         </div>
                     </div>
-
-                    {% if isolado.imagens %}
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <h6><i class="bi bi-collection"></i> Imagens já cadastradas</h6>
-                            <div class="row g-2">
-                                {% for imagem in isolado.imagens %}
-                                <div class="col-md-3 col-sm-4 col-6">
-                                    <div class="card">
-                                        <img src="{{ url_for('uploaded_file', filename=imagem.nome_arquivo) }}"
-                                             class="card-img-top"
-                                             style="height: 120px; object-fit: cover;" alt="Imagem existente">
-                                        <div class="card-body p-2">
-                                            {% if imagem.descricao %}
-                                            <small class="text-muted d-block">{{ imagem.descricao }}</small>
-                                            {% endif %}
-                                            <small class="text-muted">{{ imagem.data_upload.strftime('%d/%m/%Y') }}</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-
                     <div class="row">
                         <!-- Data de Isolamento -->
                         <div class="col-md-6 mb-3">
@@ -211,6 +185,36 @@
                         </button>
                     </div>
                 </form>
+
+                {% if isolado.imagens %}
+                <div class="mt-4">
+                    <h6><i class="bi bi-collection"></i> Imagens já cadastradas</h6>
+                    <div class="row g-2">
+                        {% for imagem in isolado.imagens %}
+                        <div class="col-md-3 col-sm-4 col-6">
+                            <div class="card h-100">
+                                <img src="{{ url_for('uploaded_file', filename=imagem.nome_arquivo) }}"
+                                     class="card-img-top"
+                                     style="height: 120px; object-fit: cover;" alt="Imagem existente">
+                                <div class="card-body p-2">
+                                    {% if imagem.descricao %}
+                                    <small class="text-muted d-block">{{ imagem.descricao }}</small>
+                                    {% endif %}
+                                    <small class="text-muted">{{ imagem.data_upload.strftime('%d/%m/%Y') }}</small>
+                                </div>
+                                <div class="card-footer bg-transparent border-top-0 pb-3">
+                                    <form method="POST" action="{{ url_for('excluir_imagem_isolado', id=imagem.id) }}" onsubmit="return confirm('Tem certeza que deseja remover esta imagem?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+                                            <i class="bi bi-trash"></i> Remover
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>

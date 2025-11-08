@@ -389,6 +389,22 @@ def excluir_repique(id):
         flash(f'Erro ao excluir repique: {str(e)}', 'error')
         return redirect(url_for('isolado_detalhe', id=isolado_id))
 
+@app.route('/isolado/imagem/<int:id>/excluir', methods=['POST'])
+def excluir_imagem_isolado(id):
+    imagem = ImagemIsolado.query.get_or_404(id)
+    isolado_id = imagem.isolado_id
+    try:
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], imagem.nome_arquivo)
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        db.session.delete(imagem)
+        db.session.commit()
+        flash('Imagem do isolado removida com sucesso!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao excluir imagem do isolado: {str(e)}', 'error')
+    return redirect(url_for('editar_isolado', id=isolado_id))
+
 # Rotas para Experimentos
 @app.route('/experimentos')
 def experimentos():
