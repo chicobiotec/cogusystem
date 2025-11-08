@@ -285,6 +285,7 @@
 
 {% block scripts %}
 <script>
+(function() {
     const meioCulturaSelect = document.getElementById('meio_cultura');
     const outrosDiv = document.getElementById('outros_meios_div');
     const outrosInput = document.getElementById('outros_meios');
@@ -304,7 +305,6 @@
         } else {
             outrosDiv.style.display = 'none';
             outrosInput.required = false;
-            // Manter o valor existente se já estiver preenchido manualmente
         }
     }
 
@@ -381,7 +381,6 @@
         updateEspecieFromColeta();
     }
 
-    // Validação do formulário
     document.querySelector('form').addEventListener('submit', function(e) {
         const codigo = document.getElementById('codigo').value.trim();
         const dataIsolamento = document.getElementById('data_isolamento').value;
@@ -430,5 +429,6 @@
 
         return true;
     });
+})();
 </script>
 {% endblock %}
